@@ -1,0 +1,19 @@
+###------------------------------------------------------------------------------------------------
+# script:  spot_warning.service
+# purpose: Monitors for Spot Two-Minute Warning and executes scripts found in [/apps/spotwarning_execution] if warning is detected
+# version: 1.0.0
+###------------------------------------------------------------------------------------------------
+[Unit]
+Description      = Monitors for Spot Two-Minute Warning and executes scripts found in [/apps/spot_warning_execution] if warning is detected
+After            = multi-user.target
+
+[Service]
+Type=simple
+WorkingDirectory = /usr/bin/
+ExecStart        = /usr/bin/spot_warning_monitor
+KillMode         = process
+Restart          = always
+RestartSec       = 15
+
+[Install]
+WantedBy         = multi-user.target
