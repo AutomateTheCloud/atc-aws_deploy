@@ -1,7 +1,7 @@
 ###------------------------------------------------------------------------------------------------
 # script:  docker.inc
 # purpose: Collection of functions related to Docker
-# version: 1.0.3
+# version: 1.0.0
 #
 # function list:
 #          - docker_compose_down
@@ -18,8 +18,8 @@ DOCKER_DIRECTORY="/apps/docker"
 
 DOCKER_YUM_PACKAGES=(
     'docker'
-    'docker-compose'
 )
+
 DOCKER_GID="2001"
 DOCKER_UID="2001"
 DOCKER_GROUPNAME="docker"
@@ -47,7 +47,7 @@ function docker_compose_down() {
     generate_temp_file DOCKER_OUTPUT "docker output"
 
     log_notice "${FUNCTION_DESCRIPTION}: started"
-    log "- Docker Compose: [${TMP_FILE_DOCKER_COMPOSE}]"
+    log ">> Docker Compose: [${TMP_FILE_DOCKER_COMPOSE}]"
     log_add_from_file "${TMP_FILE_DOCKER_COMPOSE}" "${FUNCTION_DESCRIPTION}: Docker Compose file"
 
     $(which docker-compose) --no-ansi -f "${TMP_FILE_DOCKER_COMPOSE}" down >${DOCKER_OUTPUT} 2>&1
@@ -55,7 +55,7 @@ function docker_compose_down() {
     log_add_from_file "${DOCKER_OUTPUT}" "${FUNCTION_DESCRIPTION}: Docker Compose (output)"
     if [ ${RETURNVAL} -ne 0 ]; then
         TMP_ERROR_MSG="failed to execute Docker Compose (down) (returned::${RETURNVAL})"
-        log_error "- ${TMP_ERROR_MSG}"
+        log_error ">> ${TMP_ERROR_MSG}"
         return $E_DOCKER_IMAGE_FAILURE
     fi
     log "${FUNCTION_DESCRIPTION}: successfully executed Docker Compose (down)"
@@ -85,7 +85,7 @@ function docker_compose_up() {
     generate_temp_file DOCKER_OUTPUT "docker output"
 
     log_notice "${FUNCTION_DESCRIPTION}: started"
-    log "- Docker Compose: [${TMP_FILE_DOCKER_COMPOSE}]"
+    log ">> Docker Compose: [${TMP_FILE_DOCKER_COMPOSE}]"
     log_add_from_file "${TMP_FILE_DOCKER_COMPOSE}" "${FUNCTION_DESCRIPTION}: Docker Compose file"
 
     $(which docker-compose) --no-ansi -f "${TMP_FILE_DOCKER_COMPOSE}" up -d >${DOCKER_OUTPUT} 2>&1
@@ -93,7 +93,7 @@ function docker_compose_up() {
     log_add_from_file "${DOCKER_OUTPUT}" "${FUNCTION_DESCRIPTION}: Docker Compose (output)"
     if [ ${RETURNVAL} -ne 0 ]; then
         TMP_ERROR_MSG="failed to execute Docker Compose (up) (returned::${RETURNVAL})"
-        log_error "- ${TMP_ERROR_MSG}"
+        log_error ">> ${TMP_ERROR_MSG}"
         return $E_DOCKER_IMAGE_FAILURE
     fi
     log "${FUNCTION_DESCRIPTION}: successfully executed Docker Compose (up)"
@@ -124,6 +124,11 @@ function docker_install() {
     RETURNVAL="$?"
     if [ ${RETURNVAL} -ne 0 ]; then return $RETURNVAL; fi
 
+    log_notice "${FUNCTION_DESCRIPTION}: installing Docker Compose"
+    local DOCKER_COMPOSE_URL="$(curl -s https://api.github.com/repos/docker/compose/releases/latest | grep "browser_download_url.*docker-compose-$(uname -s)-$(uname -m)\"" | cut -d : -f 2,3 | tr -d \" | awk '{$1=$1};1')"
+    curl -L ${DOCKER_COMPOSE_URL} -o /usr/local/bin/docker-compose >/dev/null 2>&1
+    chmod +x /usr/local/bin/docker-compose
+
     log_notice "${FUNCTION_DESCRIPTION}: configuring Docker"
     $(which mkdir) -p ${DOCKER_DIRECTORY} >/dev/null 2>&1
     $(which mkdir) -p /etc/docker/ >/dev/null 2>&1
@@ -139,7 +144,7 @@ EOF
     RETURNVAL="$?"
     if [ ${RETURNVAL} -ne 0 ]; then
         TMP_ERROR_MSG="failed to start Docker (returned::${RETURNVAL})"
-        log_error "- ${TMP_ERROR_MSG}"
+        log_error ">> ${TMP_ERROR_MSG}"
         exit_logic $E_SERVICE_FAILURE "${TMP_ERROR_MSG}"
     fi
     log "${FUNCTION_DESCRIPTION}: successfully installed Docker"
